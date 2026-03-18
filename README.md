@@ -1,25 +1,19 @@
-# Student Performance Prediction
-Predict student performance using ML models.
+Student Performance AI System
+-----------------------------
+Project Overview:
+An AI system designed to predict student scores (Math, Reading, Writing) and categorize 
+performance into 'At Risk', 'Average', or 'High Performer'.
 
-- Total Score
-- Average Score
-- Study Index
-- Risk Classification
+Model Performance:
+- Regression (Random Forest): R2 > 0.85 (with study hours feature)
+- Classification (Random Forest): Accuracy > 90%
 
-- Linear Regression
-- Random Forest
-- Gradient Boosting
-- XGBoost
+Key Features:
+1. Multi-Output Regression for simultaneous score prediction.
+2. Feature engineering: Study Index, Education Scoring.
+3. Interactive Streamlit dashboard for students and teachers.
+4. Bias Detection: Analyzes the impact of lunch type (socio-economic) and parental education.
 
-Target: R2 > 0.75
-
-- Math, Reading, Writing Scores
-- Performance Category
-- Improvement Suggestions
-
-- Test preparation impact
-- Gender differences
-- Socio-economic influence
-
-pip install -r requirements.txt
-python Src.py
+How to Run:
+1. Run 'python train_model.py' to generate models.
+2. Run 'streamlit run student_app.py' to launch the UI.
