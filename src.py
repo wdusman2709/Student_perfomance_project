@@ -5,7 +5,7 @@ import pickle
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.multioutput import MultiOutputRegressor
-from sklearn.metrics import r2_score, accuracy_score
+from sklearn.metrics import r2_score
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from xgboost import XGBRegressor
@@ -17,8 +17,11 @@ def load_data(path):
     return df
 
 def feature_engineering(df):
-    df["total_score"] = df["math_score"] + df["reading_score"] + df["writing_score"]
-    df["average_score"] = df["total_score"] / 3
+    df = df.copy()
+
+    if "math_score" in df.columns:
+        df["total_score"] = df["math_score"] + df["reading_score"] + df["writing_score"]
+        df["average_score"] = df["total_score"] / 3
 
     edu_map = {
         "some high school": 0,
@@ -34,21 +37,24 @@ def feature_engineering(df):
         "completed": 1
     }) + df["parental_level_of_education"].map(edu_map)
 
-    df["performance_category"] = pd.cut(
-        df["average_score"],
-        bins=[0, 50, 75, 100],
-        labels=["Low", "Medium", "High"]
-    )
+    if "average_score" in df.columns:
+        df["performance_category"] = pd.cut(
+            df["average_score"],
+            bins=[0, 50, 75, 100],
+            labels=["Low", "Medium", "High"]
+        )
 
     return df
 
 def encode(df):
     df = df.copy()
     encoders = {}
+
     for col in df.select_dtypes(include="object").columns:
         le = LabelEncoder()
         df[col] = le.fit_transform(df[col])
         encoders[col] = le
+
     return df, encoders
 
 def train_model(df):
@@ -79,7 +85,7 @@ def train_model(df):
             best_model = model
 
     with open("model.pkl", "wb") as f:
-        pickle.dump((best_model, encoders), f)
+        pickle.dump((best_model, encoders, X.columns.tolist()), f)
 
     return best_model, best_score
 
@@ -92,12 +98,21 @@ def classify_risk(avg):
         return "High Performer"
 
 def predict_student(input_data):
-    model, encoders = pickle.load(open("model.pkl", "rb"))
+    model, encoders, feature_cols = pickle.load(open("model.pkl", "rb"))
 
     df = pd.DataFrame([input_data])
 
+    df = feature_engineering(df)
+
+    for col in feature_cols:
+        if col not in df.columns:
+            df[col] = 0
+
+    df = df[feature_cols]
+
     for col, le in encoders.items():
-        df[col] = le.transform(df[col])
+        if col in df.columns:
+            df[col] = le.transform(df[col])
 
     preds = model.predict(df)[0]
     avg = np.mean(preds)
@@ -110,6 +125,48 @@ def predict_student(input_data):
     if input_data["test_preparation_course"] == "none":
         suggestions.append("Complete test preparation course")
     if avg < 60:
+        suggestions.append("Increase study hours")
+
+    return {
+        "math": preds[0],
+        "reading": preds[1],
+        "writing": preds[2],
+        "average": avg,
+        "category": category,
+        "suggestions": suggestions
+    }
+
+def generate_insights(df):
+    insights = {}
+
+    insights["test_prep"] = df.groupby("test_preparation_course")[["math_score","reading_score","writing_score"]].mean()
+    insights["gender"] = df.groupby("gender")[["math_score","reading_score","writing_score"]].mean()
+    insights["lunch"] = df.groupby("lunch")[["math_score","reading_score","writing_score"]].mean()
+    insights["parent_edu"] = df.groupby("parental_level_of_education")[["math_score","reading_score","writing_score"]].mean()
+
+    return insights
+
+if __name__ == "__main__":
+    df = load_data("StudentsPerformance.csv")
+    df = feature_engineering(df)
+
+    model, score = train_model(df)
+    print("Best R2 Score:", score)
+
+    sample = {
+        "gender": "female",
+        "parental_level_of_education": "bachelor's degree",
+        "lunch": "standard",
+        "test_preparation_course": "none",
+        "study_hours": 3
+    }
+
+    result = predict_student(sample)
+
+    print("Prediction:", result)
+
+    insights = generate_insights(df)
+    print("Insights Generated")    if avg < 60:
         suggestions.append("Increase study hours")
 
     return {
