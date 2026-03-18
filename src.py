@@ -132,7 +132,7 @@ def generate_insights(df):
     return insights
 
 if __name__ == "__main__":
-    df = load_data("Student.csv")
+    df = load_data("StudentsPerformance.csv")
     df = feature_engineering(df)
 
     model, score = train_model(df)
