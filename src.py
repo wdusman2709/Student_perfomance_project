@@ -166,7 +166,7 @@ if __name__ == "__main__":
     print("Prediction:", result)
 
     insights = generate_insights(df)
-    print("Insights Generated")    if avg < 60:
+    print("Insights Generated")
         suggestions.append("Increase study hours")
 
     return {
