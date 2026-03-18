@@ -167,7 +167,16 @@ if __name__ == "__main__":
 
     insights = generate_insights(df)
     print("Insights Generated")
-        suggestions.append("Increase study hours")
+        suggestions = []
+
+if preds[0] < preds[1]:
+    suggestions.append("Focus more on Math practice")
+
+if input_data["test_preparation_course"] == "none":
+    suggestions.append("Complete test preparation course")
+
+if avg < 60:
+    suggestions.append("Increase study hours")
 
     return {
         "math": preds[0],
